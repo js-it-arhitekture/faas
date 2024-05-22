@@ -1,0 +1,80 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: itarhbooking
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: booking-management-system
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: booking-management-system
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+  environment:
+    EVENTS_TABLE: ${self:service}-events
+    UPLOAD_BUCKET: ${self:service}-uploads
+
+plugins:
+  - serverless-offline
+  - serverless-localstack
+
+custom:
+  localstack:
+    stages:
+      - local
+
+functions:
+  createBooking:
+    handler: handler.createBooking
+    events:
+      - http:
+          path: /booking
+          method: post
+          cors: true
+  getBookings:
+    handler: handler.getBookings
+    events:
+      - http:
+          path: /booking
+          method: get
+          cors: true
+  getBooking:
+    handler: handler.getBookingById
+    events:
+      - http:
+          path: /booking/{id}
+          method: get
+          cors: true
+  updateBooking:
+    handler: handler.updateBooking
+    events:
+      - http:
+          path: /booking/{id}
+          method: put
+          cors: true
+  deleteBooking:
+    handler: handler.deleteBooking
+    events:
+      - http:
+          path: /booking/{id}
+          method: delete
+          cors: true
+
+resources:
+  Resources:
+    EventsDynanoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.EVENTS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+  UploadsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ${self:provider.environment.UPLOAD_BUCKET}
